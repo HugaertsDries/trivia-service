@@ -17,7 +17,15 @@ const triviaSerializer = new Serializer('question', {
     attributes: ["category", "difficulty", "question", "correct_answer", "incorrect_answers"]
 });
 
+// GET random trivia
+app.get('/trivia', function (req, res) {
+    getTrivia(10, "boolean", "", "").then((data) => {
+        let trivia = data.results.find((trivia) => trivia.correct_answer = "True");
+        res.send(triviaSerializer.serialize(trivia));
+    });
+});
 
+// GET Questions
 app.get('/question', function (req, res) {
     let { amount, type, difficulty, category } = req.query
     getTrivia(amount, type, difficulty, category).then((data) => {
@@ -27,6 +35,7 @@ app.get('/question', function (req, res) {
     });
 });
 
+// GET Categories
 app.get('/question/category', function (req, res) {
     getCategories().then((data) => {
         var categories = categorySerializer.serialize(data.trivia_categories);
@@ -34,6 +43,7 @@ app.get('/question/category', function (req, res) {
     });
 });
 
+// GET Categories for id
 app.get('/question/category/:categoryId', function (req, res) {
     getCategories().then((data) => {
         let cat = categorySerializer.serialize(
