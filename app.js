@@ -1,17 +1,8 @@
 import { app, uuid, errorHandler } from "mu";
-import fetch from "node-fetch";
 import { Serializer } from "jsonapi-serializer";
 import { OpenTDBService } from "./services/opentdb";
 
 const openTDBService = new OpenTDBService();
-
-const QUESTION = {
-    AMOUNT: 50,
-    TYPE: "",
-    DIFFICULTY: "",
-    CATEGORY: ""
-}
-
 const categorySerializer = new Serializer('category', {
     attributes: ["name"]
 });
