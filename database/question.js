@@ -9,9 +9,9 @@ const NAMESPACE = "7d96e81d-bfad-4e08-b820-1d5ff04b1972";
 
 export class QuestionDB {
 
+    // DONE
     async addQuestion(question) {
         let uuid = uuidv5(question.question, NAMESPACE);
-        debugger;
         let q = `
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         PREFIX ve: <${PREFIX_PRE_EXT}>
@@ -41,6 +41,7 @@ export class QuestionDB {
         });
     }
 
+    // TODO add params {amount, type, category, difficulty, ...}
     async getQuestion(uuid) {
         let q = `
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -68,8 +69,8 @@ export class QuestionDB {
 
     }
 
+    // TODO add params {amount, type, category, difficulty, ...}
     async getQuestions() {
-        // TODO Remove LIMIT or make variable
         let q = `
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         PREFIX ve: <${PREFIX_PRE_EXT}>
@@ -87,14 +88,14 @@ export class QuestionDB {
                 ?uri ve:correct_answer ?correct_answer .
             }
         }
-        LIMIT 10
+        LIMIT 50
         `
-
         let res = await query(q);
         let transformed = await this.transformBindingsToQuestions(res.results.bindings);
         return transformed;
     }
 
+    // DONE
     async getIncorrectAnswers(uuid) {
         let q = `
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -110,7 +111,6 @@ export class QuestionDB {
             }
         }
         `
-
         let res = await query(q);
         let answers = res.results.bindings.map((binding) => binding.incorrect_answer.value);
         return answers
@@ -130,7 +130,68 @@ export class QuestionDB {
                 ?uri ve:category ?category .
             }
         }
+        ORDER BY ?category
         `
+        let res = await query(q);
+        let categories = res.results.bindings.map((binding, index) => {
+            return {
+                id: index,
+                name: binding.category.value
+            }
+        });
+        return categories;
+    }
+
+    // TODO Better order
+    async getDifficulties() {
+        let q = `
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX ve: <${PREFIX_PRE_EXT}>
+        PREFIX vc: <${PREFIX_PRE_CORE}>
+        
+        SELECT DISTINCT ?difficulty
+        WHERE {
+            GRAPH <http://mu.semte.ch/application> {
+                ?uri rdf:type ve:Trivia . 
+                ?uri ve:difficulty ?difficulty .
+            }
+        }
+        ORDER BY ?difficulty
+        `
+        let res = await query(q);
+        let difficulties = res.results.bindings.map((binding) => {
+            return {
+                id: binding.difficulty.value.toLowerCase(),
+                name: binding.difficulty.value
+            }
+        });
+        return difficulties;
+    }
+
+    // DONE
+    async getTypes() {
+        let q = `
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX ve: <${PREFIX_PRE_EXT}>
+        PREFIX vc: <${PREFIX_PRE_CORE}>
+        
+        SELECT DISTINCT ?type
+        WHERE {
+            GRAPH <http://mu.semte.ch/application> {
+                ?uri rdf:type ve:Trivia . 
+                ?uri ve:type ?type .
+            }
+        }
+        ORDER BY ?type
+        `
+        let res = await query(q);
+        let types = res.results.bindings.map((binding) => {
+            return {
+                id: binding.type.value.toLowerCase(),
+                name: binding.type.value
+            }
+        });
+        return types;
     }
 
     // TODO move this to dedicated transformation.js
@@ -145,7 +206,6 @@ export class QuestionDB {
     // TODO move this to dedicated transformation.js
     async transformBindingToQuestion(binding) {
         let incorrect_answers = await this.getIncorrectAnswers(binding.id.value);
-        // let incorrect_answers = [];
         return {
             id: binding.id.value,
             category: binding.category.value,

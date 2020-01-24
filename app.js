@@ -6,6 +6,14 @@ import { QuestionDB } from "./database/question";
 const openTDBService = new OpenTDBService();
 const questionDB = new QuestionDB;
 
+const typeSerializer = new Serializer('type', {
+    attributes: ["name"]
+});
+
+const difficultySerializer = new Serializer('difficulty', {
+    attributes: ["name"]
+});
+
 const categorySerializer = new Serializer('category', {
     attributes: ["name"]
 });
@@ -32,22 +40,22 @@ app.get('/trivia', function (req, res) {
 });
 
 // GET Questions
-app.get('/questions', function (req, res) {
-    // let { amount, type, difficulty, category } = req.query
-    openTDBService.getTrivia(req.query).then((data) => {
-        data.forEach(((question) => question.id = uuid()));
-        var questions = triviaSerializer.serialize(data);
-        res.send(questions);
-    });
-});
+// app.get('/questions', function (req, res) {
+//     // let { amount, type, difficulty, category } = req.query
+//     openTDBService.getTrivia(req.query).then((data) => {
+//         data.forEach(((question) => question.id = uuid()));
+//         var questions = triviaSerializer.serialize(data);
+//         res.send(questions);
+//     });
+// });
 
 // GET Categories
-app.get('/questions/categories', function (req, res) {
-    openTDBService.getCategories().then((data) => {
-        var categories = categorySerializer.serialize(data);
-        res.send(categories);
-    });
-});
+// app.get('/questions/categories', function (req, res) {
+//     openTDBService.getCategories().then((data) => {
+//         var categories = categorySerializer.serialize(data);
+//         res.send(categories);
+//     });
+// });
 
 // GET Categories for id
 app.get('/questions/categories/:categoryId', function (req, res) {
@@ -60,6 +68,7 @@ app.get('/questions/categories/:categoryId', function (req, res) {
 });
 
 // TESTING
+// ----------------------------------------------------------------
 
 // TODO add crone job that loads in questions
 app.get('/fill', function (req, res) {
@@ -71,7 +80,7 @@ app.get('/fill', function (req, res) {
 });
 
 // GET Questions from TripleStore
-app.get('/q', function (req, res) {
+app.get('/questions', function (req, res) {
     questionDB.getQuestions().then((data) => {
         var questions = triviaSerializer.serialize(data);
         res.send(questions);
@@ -79,9 +88,30 @@ app.get('/q', function (req, res) {
 });
 
 // GET Question for id from TripleStore
-app.get('/q/:id', function (req, res) {
+app.get('/questions/:id', function (req, res) {
     questionDB.getQuestion(req.params.id).then((data) => {
         res.send(triviaSerializer.serialize(data));
+    });
+});
+
+app.get('/question/categories', function (req, res) {
+    questionDB.getCategories().then(data => {
+        var categories = categorySerializer.serialize(data);
+        res.send(categories);
+    });
+});
+
+app.get('/question/difficulties', function (req, res) {
+    questionDB.getDifficulties().then(data => {
+        var difficulties = difficultySerializer.serialize(data);
+        res.send(difficulties);
+    });
+});
+
+app.get('/question/types', function (req, res) {
+    questionDB.getTypes().then(data => {
+        var types = typeSerializer.serialize(data);
+        res.send(types);
     });
 });
 
