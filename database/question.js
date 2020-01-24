@@ -194,6 +194,7 @@ export class QuestionStore {
         return types;
     }
 
+    // TODO add params {type, category, difficulty, ...}
     async getAmountQuestions() {
         let q = `
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
