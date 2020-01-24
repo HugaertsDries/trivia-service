@@ -215,7 +215,8 @@ export class QuestionStore {
     }
 
     // TODO add params {type, category, difficulty, ...}
-    async getAmountQuestions() {
+    async getAmountQuestions(params) {
+        const { type, category, difficulty } = params
         let q = `
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         PREFIX vet: <${PREFIX_PRE_EXT_TRIVIA}>
@@ -223,7 +224,14 @@ export class QuestionStore {
         SELECT COUNT(?uri) AS ?count
         WHERE {
             GRAPH <http://mu.semte.ch/application> {
-                ?uri rdf:type vet:Trivia 
+                ?uri rdf:type vet:Trivia .
+                ?uri vet:category ?curi .
+                ?curi vc:uuid ?cid .
+                ?uri vet:type ?type .
+                ?uri vet:difficulty ?difficulty .
+                ${type ? `FILTER(?type = "${type}") .` : ""}
+                ${difficulty ? `FILTER(?difficulty = "${difficulty}") .` : ""}
+                ${category ? `FILTER(?cid = "${category}")` : ""} 
             }
         }
         `
