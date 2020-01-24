@@ -81,7 +81,7 @@ app.get('/fill', function (req, res) {
 
 // GET Questions from TripleStore
 app.get('/questions', function (req, res) {
-    questionService.getQuestions().then((data) => {
+    questionService.getQuestions(req.query).then((data) => {
         var questions = triviaSerializer.serialize(data);
         res.send(questions);
     });

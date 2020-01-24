@@ -41,7 +41,7 @@ export class QuestionStore {
         });
     }
 
-    // TODO add params {amount, type, category, difficulty, ...}
+    // DONE
     async getQuestion(uuid) {
         let q = `
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -69,8 +69,9 @@ export class QuestionStore {
 
     }
 
-    // TODO add params {amount, type, category, difficulty, ...}
-    async getQuestions() {
+    // TODO category is not yet properly filterable
+    async getQuestions(params) {
+        const { amount, type, category, difficulty } = params
         let q = `
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         PREFIX ve: <${PREFIX_PRE_EXT}>
@@ -86,9 +87,12 @@ export class QuestionStore {
                 ?uri ve:difficulty ?difficulty .
                 ?uri ve:question ?question .
                 ?uri ve:correct_answer ?correct_answer .
+                ${type ? `FILTER(?type = "${type}") .` : ""}
+                ${difficulty ? `FILTER(?difficulty = "${difficulty}") .` : ""}
+                ${category ? `FILTER(?difficulty = "${category}")` : ""}
             }
         }
-        LIMIT 50
+        ${amount ? `LIMIT ${amount}` : ""}
         `
         let res = await query(q);
         let transformed = await this.transformBindingsToQuestions(res.results.bindings);
