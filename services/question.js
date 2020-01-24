@@ -41,7 +41,6 @@ export class QuestionService {
 
         let offsets = [];
         for (let i = 1; i <= amount; i++) {
-            // TODO possible doubles
             let random = Math.floor((Math.random() * amountQuestions) + 1);
             if (!offsets.includes(random)) {
                 offsets.push(random);

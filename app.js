@@ -127,8 +127,7 @@ app.get('/random/questions', function (req, res) {
     questionService.getRandomQuestions(req.query).then(data => {
         var questions = triviaSerializer.serialize(data);
         res.send(questions);
-    })
-    // res.send("a Random set of question will be found here ....");
+    });
 });
 
 
