@@ -80,9 +80,9 @@ export class QuestionStore {
 
     }
 
-    // TODO category is not yet properly filterable
+    // DONE
     async getQuestions(params) {
-        const { amount, type, category, difficulty } = params
+        const { amount, offset, type, category, difficulty } = params
         let q = `
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         PREFIX vet: <${PREFIX_PRE_EXT_TRIVIA}>
@@ -107,6 +107,7 @@ export class QuestionStore {
             }
         }
         ${amount ? `LIMIT ${amount}` : ""}
+        ${(offset >= 1) ? `OFFSET ${offset}` : ""}
         `
         let res = await query(q);
         let transformed = await this.transformBindingsToQuestions(res.results.bindings);
@@ -220,6 +221,7 @@ export class QuestionStore {
         let q = `
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         PREFIX vet: <${PREFIX_PRE_EXT_TRIVIA}>
+        PREFIX vc: <${PREFIX_PRE_CORE}>
         
         SELECT COUNT(?uri) AS ?count
         WHERE {
@@ -236,7 +238,7 @@ export class QuestionStore {
         }
         `
         let res = await query(q);
-        return res.results.bindings[0].count;
+        return res.results.bindings[0].count.value;
     }
 
     // TODO move this to dedicated transformation.js
@@ -261,6 +263,4 @@ export class QuestionStore {
             incorrect_answers
         }
     }
-
-
 }

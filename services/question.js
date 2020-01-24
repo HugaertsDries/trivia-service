@@ -30,14 +30,29 @@ export class QuestionService {
         return await this.store.getQuestion(id);
     }
 
-    async getRandomQuestions() {
-        // Get (based on given params) all uri (or uuid) in the database.
+    async getRandomQuestions(params) {
+        let { type, category, difficulty } = params;
+        let amount = params.amount ? params.amount : 10;
+        let amountQuestions = await this.store.getAmountQuestions({ amount, type, category, difficulty });
 
-        // Pick 10 (later dynamic) random uris (or uuids).
+        let offsets = [];
+        for (let i = 1; i <= amount; i++) {
+            // TODO possible doubles
+            let random = Math.floor((Math.random() * amountQuestions) + 1);
+            if (!offsets.includes(random)) {
+                offsets.push(random);
+            } else {
+                i--
+            }
+        }
 
-        // Retrieve all questions for the "generated" uris (or uuids).
+        let questions = [];
+        for (let offset of offsets) {
+            let result = await this.store.getQuestions({ amount: 1, offset, type, category, difficulty });
+            questions.push(result[0]);
+        }
 
-        // return
+        return questions;
     }
 
     // async getCategory(id) {
