@@ -135,6 +135,33 @@ export class QuestionStore {
         return answers
     }
 
+    async getCategory(uuid) {
+        let q = `
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX vet: <${PREFIX_PRE_EXT_TRIVIA}>
+        PREFIX vtc: <${PREFIX_PRE_EXT_TRIVIA}/category>
+        PREFIX vc: <${PREFIX_PRE_CORE}>
+        
+        SELECT DISTINCT ?uuid ?name
+        WHERE {
+            GRAPH <http://mu.semte.ch/application> {
+                ?uri rdf:type vtc:Category .
+                ?uri vc:uuid "${uuid}" . 
+                ?uri vtc:name ?name .
+            }
+        }
+        ORDER BY ?name
+        `
+        let res = await query(q);
+        let categories = res.results.bindings.map((binding) => {
+            return {
+                id: uuid,
+                name: binding.name.value
+            }
+        });
+        return categories;
+    }
+
     // TODO Add id (should be consistent, order?) + transform.
     async getCategories() {
         let q = `

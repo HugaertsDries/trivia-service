@@ -30,6 +30,10 @@ export class QuestionService {
         return await this.store.getQuestion(id);
     }
 
+    async getCategory(id) {
+        return await this.store.getCategory(id);
+    }
+
     async getRandomQuestions(params) {
         let { type, category, difficulty } = params;
         let amount = params.amount ? params.amount : 10;
@@ -54,8 +58,4 @@ export class QuestionService {
 
         return questions;
     }
-
-    // async getCategory(id) {
-    //     return db.getCategories
-    // }
 }

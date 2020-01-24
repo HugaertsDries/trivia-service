@@ -101,6 +101,13 @@ app.get('/question/categories', function (req, res) {
     });
 });
 
+app.get('/question/categories/:id', function (req, res) {
+    questionService.getCategory(req.params.id).then(data => {
+        var categories = categorySerializer.serialize(data);
+        res.send(categories);
+    });
+});
+
 app.get('/question/difficulties', function (req, res) {
     questionService.getDifficulties().then(data => {
         var difficulties = difficultySerializer.serialize(data);
