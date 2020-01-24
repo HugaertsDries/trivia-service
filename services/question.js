@@ -6,6 +6,10 @@ export class QuestionService {
         this.store = new QuestionStore();
     }
 
+    async addQuestions(data) {
+        this.store.addQuestions(data);
+    }
+
     async getQuestions(params) {
         return await this.store.getQuestions(params)
     }

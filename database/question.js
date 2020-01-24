@@ -2,7 +2,8 @@ import { query, update } from 'mu';
 import uuidv5 from 'uuid/v5';
 
 const PREFIX_QUESTIONS = "http://qmino/data/questions/";
-const PREFIX_PRE_EXT = "http://qmino/vocabularies/ext/trivia";
+const PREFIX_Q_CATEGORIES = "http://qmino/data/question/categories/";
+const PREFIX_PRE_EXT_TRIVIA = "http://qmino/vocabularies/ext/trivia";
 const PREFIX_PRE_CORE = "http://qmino/vocabularies/core/";
 
 const NAMESPACE = "7d96e81d-bfad-4e08-b820-1d5ff04b1972";
@@ -11,28 +12,36 @@ export class QuestionStore {
 
     // DONE
     async addQuestion(question) {
-        let uuid = uuidv5(question.question, NAMESPACE);
+        let questionId = uuidv5(question.question, NAMESPACE);
+        let categoryId = uuidv5(question.category, NAMESPACE);
+
         let q = `
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-        PREFIX ve: <${PREFIX_PRE_EXT}>
-        PREFIX vc: <${PREFIX_PRE_CORE}>
+        PREFIX vet: <${PREFIX_PRE_EXT_TRIVIA}>
+        PREFIX vtc: <${PREFIX_PRE_EXT_TRIVIA}/category>
+        PREFIX vc:  <${PREFIX_PRE_CORE}>
 
         INSERT DATA {
             GRAPH <http://mu.semte.ch/application> { 
-                <${PREFIX_QUESTIONS}${uuid}> 
-                    rdf:type ve:Trivia ; 
-                    vc:uuid "${uuid}" ;
-                    ve:category "${question.category}" ;
-                    ve:type "${question.type}" ;
-                    ve:difficulty "${question.difficulty}" ;
-                    ve:question "${question.question}" ;
-                    ve:correct_answer "${question.correct_answer}" ;
-                    ${question.incorrect_answers.map((answer) => `ve:incorrect_answer "${answer}"`).join(" ; ")}
+                <${PREFIX_QUESTIONS}${questionId}> 
+                    rdf:type vet:Trivia ; 
+                    vc:uuid "${questionId}" ;
+                    vet:category <${PREFIX_Q_CATEGORIES}${questionId}> ;
+                    vet:type "${question.type}" ;
+                    vet:difficulty "${question.difficulty}" ;
+                    vet:question "${question.question}" ;
+                    vet:correct_answer "${question.correct_answer}" ;
+                    ${(question.incorrect_answers.map((answer) => `vet:incorrect_answer "${answer}"`).join(" ; ") + " .")}
+
+                <${PREFIX_Q_CATEGORIES}${questionId}>
+                    rdf:type vtc:Category ;
+                    vc:uuid "${categoryId}" ;
+                    vtc:name "${question.category}" .
             }
         }
         `
         await update(q);
-        return uuid;
+        return questionId;
     }
 
     addQuestions(questions) {
@@ -45,20 +54,22 @@ export class QuestionStore {
     async getQuestion(uuid) {
         let q = `
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-        PREFIX ve: <${PREFIX_PRE_EXT}>
+        PREFIX vet: <${PREFIX_PRE_EXT_TRIVIA}>
+        PREFIX vtc: <${PREFIX_PRE_EXT_TRIVIA}/category>
         PREFIX vc: <${PREFIX_PRE_CORE}>
         
         SELECT ?uri ?id ?category ?type ?difficulty ?question ?correct_answer
         WHERE {
             GRAPH <http://mu.semte.ch/application> {
-                ?uri rdf:type ve:Trivia . 
+                ?uri rdf:type vet:Trivia . 
                 ?uri vc:uuid "${uuid}" .
                 ?uri vc:uuid ?id .
-                ?uri ve:category ?category .
-                ?uri ve:type ?type .
-                ?uri ve:difficulty ?difficulty .
-                ?uri ve:question ?question .
-                ?uri ve:correct_answer ?correct_answer .
+                ?uri vet:category ?curi .
+                ?uri vtc:name ?category .
+                ?uri vet:type ?type .
+                ?uri vet:difficulty ?difficulty .
+                ?uri vet:question ?question .
+                ?uri vet:correct_answer ?correct_answer .
             }
         }
         `
@@ -74,22 +85,25 @@ export class QuestionStore {
         const { amount, type, category, difficulty } = params
         let q = `
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-        PREFIX ve: <${PREFIX_PRE_EXT}>
+        PREFIX vet: <${PREFIX_PRE_EXT_TRIVIA}>
+        PREFIX vtc: <${PREFIX_PRE_EXT_TRIVIA}/category>
         PREFIX vc: <${PREFIX_PRE_CORE}>
         
         SELECT ?uri ?id ?category ?type ?difficulty ?question ?correct_answer
         WHERE {
             GRAPH <http://mu.semte.ch/application> { 
-                ?uri rdf:type ve:Trivia .
+                ?uri rdf:type vet:Trivia .
                 ?uri vc:uuid ?id .
-                ?uri ve:category ?category .
-                ?uri ve:type ?type .
-                ?uri ve:difficulty ?difficulty .
-                ?uri ve:question ?question .
-                ?uri ve:correct_answer ?correct_answer .
+                ?uri vet:category ?curi .
+                ?curi vc:uuid ?cid .
+                ?curi vtc:name ?category .
+                ?uri vet:type ?type .
+                ?uri vet:difficulty ?difficulty .
+                ?uri vet:question ?question .
+                ?uri vet:correct_answer ?correct_answer .
                 ${type ? `FILTER(?type = "${type}") .` : ""}
                 ${difficulty ? `FILTER(?difficulty = "${difficulty}") .` : ""}
-                ${category ? `FILTER(?difficulty = "${category}")` : ""}
+                ${category ? `FILTER(?cid = "${category}")` : ""}
             }
         }
         ${amount ? `LIMIT ${amount}` : ""}
@@ -103,15 +117,15 @@ export class QuestionStore {
     async getIncorrectAnswers(uuid) {
         let q = `
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-        PREFIX ve: <${PREFIX_PRE_EXT}>
+        PREFIX vet: <${PREFIX_PRE_EXT_TRIVIA}>
         PREFIX vc: <${PREFIX_PRE_CORE}>
         
         SELECT ?incorrect_answer
         WHERE {
             GRAPH <http://mu.semte.ch/application> { 
-                ?uri rdf:type ve:Trivia .
+                ?uri rdf:type vet:Trivia .
                 ?uri vc:uuid "${uuid}" .
-                ?uri ve:incorrect_answer ?incorrect_answer .
+                ?uri vet:incorrect_answer ?incorrect_answer .
             }
         }
         `
@@ -124,23 +138,25 @@ export class QuestionStore {
     async getCategories() {
         let q = `
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-        PREFIX ve: <${PREFIX_PRE_EXT}>
+        PREFIX vet: <${PREFIX_PRE_EXT_TRIVIA}>
+        PREFIX vtc: <${PREFIX_PRE_EXT_TRIVIA}/category>
         PREFIX vc: <${PREFIX_PRE_CORE}>
         
-        SELECT DISTINCT ?category
+        SELECT DISTINCT ?uuid ?name
         WHERE {
             GRAPH <http://mu.semte.ch/application> {
-                ?uri rdf:type ve:Trivia . 
-                ?uri ve:category ?category .
+                ?uri rdf:type vtc:Category .
+                ?uri vc:uuid ?uuid . 
+                ?uri vtc:name ?name .
             }
         }
-        ORDER BY ?category
+        ORDER BY ?name
         `
         let res = await query(q);
-        let categories = res.results.bindings.map((binding, index) => {
+        let categories = res.results.bindings.map((binding) => {
             return {
-                id: index,
-                name: binding.category.value
+                id: binding.uuid.value,
+                name: binding.name.value
             }
         });
         return categories;
@@ -150,14 +166,14 @@ export class QuestionStore {
     async getDifficulties() {
         let q = `
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-        PREFIX ve: <${PREFIX_PRE_EXT}>
+        PREFIX vet: <${PREFIX_PRE_EXT_TRIVIA}>
         PREFIX vc: <${PREFIX_PRE_CORE}>
         
         SELECT DISTINCT ?difficulty
         WHERE {
             GRAPH <http://mu.semte.ch/application> {
-                ?uri rdf:type ve:Trivia . 
-                ?uri ve:difficulty ?difficulty .
+                ?uri rdf:type vet:Trivia . 
+                ?uri vet:difficulty ?difficulty .
             }
         }
         ORDER BY ?difficulty
@@ -176,14 +192,14 @@ export class QuestionStore {
     async getTypes() {
         let q = `
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-        PREFIX ve: <${PREFIX_PRE_EXT}>
+        PREFIX vet: <${PREFIX_PRE_EXT_TRIVIA}>
         PREFIX vc: <${PREFIX_PRE_CORE}>
         
         SELECT DISTINCT ?type
         WHERE {
             GRAPH <http://mu.semte.ch/application> {
-                ?uri rdf:type ve:Trivia . 
-                ?uri ve:type ?type .
+                ?uri rdf:type vet:Trivia . 
+                ?uri vet:type ?type .
             }
         }
         ORDER BY ?type
@@ -202,12 +218,12 @@ export class QuestionStore {
     async getAmountQuestions() {
         let q = `
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-        PREFIX ve: <${PREFIX_PRE_EXT}>
+        PREFIX vet: <${PREFIX_PRE_EXT_TRIVIA}>
         
         SELECT COUNT(?uri) AS ?count
         WHERE {
             GRAPH <http://mu.semte.ch/application> {
-                ?uri rdf:type ve:Trivia 
+                ?uri rdf:type vet:Trivia 
             }
         }
         `
