@@ -2,15 +2,16 @@ import { query, update } from 'mu';
 import uuidv5 from 'uuid/v5';
 
 const PREFIX_QUESTIONS = "http://qmino/data/questions/";
-const PREFIX_PRE_EXT = "http://qmino/vocabularies/ext/";
+const PREFIX_PRE_EXT = "http://qmino/vocabularies/ext/trivia";
 const PREFIX_PRE_CORE = "http://qmino/vocabularies/core/";
 
 const NAMESPACE = "7d96e81d-bfad-4e08-b820-1d5ff04b1972";
 
 export class QuestionDB {
 
-    addQuestion(question) {
+    async addQuestion(question) {
         let uuid = uuidv5(question.question, NAMESPACE);
+        debugger;
         let q = `
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         PREFIX ve: <${PREFIX_PRE_EXT}>
@@ -25,11 +26,12 @@ export class QuestionDB {
                     ve:type "${question.type}" ;
                     ve:difficulty "${question.difficulty}" ;
                     ve:question "${question.question}" ;
-                    ve:correct_answer "${question.correct_answer}"
+                    ve:correct_answer "${question.correct_answer}" ;
+                    ${question.incorrect_answers.map((answer) => `ve:incorrect_answer "${answer}"`).join(" ; ")}
             }
         }
         `
-        update(q);
+        await update(q);
         return uuid;
     }
 
@@ -67,6 +69,7 @@ export class QuestionDB {
     }
 
     async getQuestions() {
+        // TODO Remove LIMIT or make variable
         let q = `
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         PREFIX ve: <${PREFIX_PRE_EXT}>
@@ -84,32 +87,73 @@ export class QuestionDB {
                 ?uri ve:correct_answer ?correct_answer .
             }
         }
+        LIMIT 10
         `
 
         let res = await query(q);
-        let transformed = this.transformBindingsToQuestions(res.results.bindings);
+        let transformed = await this.transformBindingsToQuestions(res.results.bindings);
         return transformed;
     }
 
+    async getIncorrectAnswers(uuid) {
+        let q = `
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX ve: <${PREFIX_PRE_EXT}>
+        PREFIX vc: <${PREFIX_PRE_CORE}>
+        
+        SELECT ?incorrect_answer
+        WHERE {
+            GRAPH <http://mu.semte.ch/application> { 
+                ?uri rdf:type ve:Trivia .
+                ?uri vc:uuid "${uuid}" .
+                ?uri ve:incorrect_answer ?incorrect_answer .
+            }
+        }
+        `
+
+        let res = await query(q);
+        let answers = res.results.bindings.map((binding) => binding.incorrect_answer.value);
+        return answers
+    }
+
+    // TODO Add id (should be consistent, order?) + transform.
     async getCategories() {
-
+        let q = `
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX ve: <${PREFIX_PRE_EXT}>
+        PREFIX vc: <${PREFIX_PRE_CORE}>
+        
+        SELECT DISTINCT ?category
+        WHERE {
+            GRAPH <http://mu.semte.ch/application> {
+                ?uri rdf:type ve:Trivia . 
+                ?uri ve:category ?category .
+            }
+        }
+        `
     }
 
     // TODO move this to dedicated transformation.js
-    transformBindingsToQuestions(bindings) {
-        return bindings.map(binding => {
-            return this.transformBindingToQuestion(binding);
-        })
+    async transformBindingsToQuestions(bindings) {
+        let questions = [];
+        for (let binding of bindings) {
+            questions.push(await this.transformBindingToQuestion(binding));
+        }
+        return questions;
     }
 
     // TODO move this to dedicated transformation.js
-    transformBindingToQuestion(binding) {
+    async transformBindingToQuestion(binding) {
+        let incorrect_answers = await this.getIncorrectAnswers(binding.id.value);
+        // let incorrect_answers = [];
         return {
             id: binding.id.value,
             category: binding.category.value,
+            type: binding.type.value,
             difficulty: binding.difficulty.value,
             question: binding.question.value,
-            correct_answer: binding.correct_answer.value
+            correct_answer: binding.correct_answer.value,
+            incorrect_answers
         }
     }
 

@@ -12,6 +12,7 @@ const categorySerializer = new Serializer('category', {
 
 const triviaSerializer = new Serializer('question', {
     attributes: [
+        "type",
         "category",
         "difficulty",
         "question",
@@ -61,21 +62,11 @@ app.get('/questions/categories/:categoryId', function (req, res) {
 // TESTING
 
 // TODO add crone job that loads in questions
-app.get('/test', function (req, res) {
-    // request a random trivia form the opentbd.
-    openTDBService.getTrivia({ amount: 0 }).then((data) => {
-        // let trivia = data[0]
-        // add it to our triplestore
+app.get('/fill', function (req, res) {
+    openTDBService.getTrivia({ amount: 50 }).then((data) => {
         questionDB.addQuestions(data);
-        // request it back from our triplestore
-        //questionDB.getQuestion(uuid).then((d) => {
-        //    res.send(d);
-        //});
-        questionDB.getQuestions().then((data) => {
-            var questions = triviaSerializer.serialize(data);
-            res.send(questions);
-        });
-        // res.send("Successfully added 50 new Questions");
+        // console.log("Successfully added new Questions")
+        res.send("Successfully added new Questions");
     });
 });
 
