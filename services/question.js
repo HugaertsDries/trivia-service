@@ -1,29 +1,29 @@
-import { QuestionStore } from "./database/question";
+import { QuestionStore } from "../database/question";
 
 export class QuestionService {
 
     constructor() {
-        store = QuestionStore();
+        this.store = new QuestionStore();
     }
 
     async getQuestions(params) {
-        return await store.getQuestions(params)
+        return await this.store.getQuestions(params)
     }
 
     async getCategories() {
-        return await store.getCategories()
+        return await this.store.getCategories()
     }
 
     async getTypes() {
-        return await store.getTypes()
+        return await this.store.getTypes()
     }
 
     async getDifficulties() {
-        return await store.getDifficulties()
+        return await this.store.getDifficulties()
     }
 
     async getQuestion(id) {
-        return await store.getQuestion(id);
+        return await this.store.getQuestion(id);
     }
 
     async getRandomQuestions() {

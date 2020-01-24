@@ -1,10 +1,10 @@
 import { app, uuid, errorHandler } from "mu";
 import { Serializer } from "jsonapi-serializer";
 import { OpenTDBService } from "./services/opentdb";
-import { QuestionStore } from "./database/question";
+import { QuestionService } from "./services/question";
 
 const openTDBService = new OpenTDBService();
-const questionDB = new QuestionStore;
+const questionService = new QuestionService();
 
 const typeSerializer = new Serializer('type', {
     attributes: ["name"]
@@ -73,7 +73,7 @@ app.get('/questions/categories/:categoryId', function (req, res) {
 // TODO add crone job that loads in questions
 app.get('/fill', function (req, res) {
     openTDBService.getTrivia({ amount: 50 }).then((data) => {
-        questionDB.addQuestions(data);
+        questionService.addQuestions(data);
         // console.log("Successfully added new Questions")
         res.send("Successfully added new Questions");
     });
@@ -81,7 +81,7 @@ app.get('/fill', function (req, res) {
 
 // GET Questions from TripleStore
 app.get('/questions', function (req, res) {
-    questionDB.getQuestions().then((data) => {
+    questionService.getQuestions().then((data) => {
         var questions = triviaSerializer.serialize(data);
         res.send(questions);
     });
@@ -89,27 +89,27 @@ app.get('/questions', function (req, res) {
 
 // GET Question for id from TripleStore
 app.get('/questions/:id', function (req, res) {
-    questionDB.getQuestion(req.params.id).then((data) => {
+    questionService.getQuestion(req.params.id).then((data) => {
         res.send(triviaSerializer.serialize(data));
     });
 });
 
 app.get('/question/categories', function (req, res) {
-    questionDB.getCategories().then(data => {
+    questionService.getCategories().then(data => {
         var categories = categorySerializer.serialize(data);
         res.send(categories);
     });
 });
 
 app.get('/question/difficulties', function (req, res) {
-    questionDB.getDifficulties().then(data => {
+    questionService.getDifficulties().then(data => {
         var difficulties = difficultySerializer.serialize(data);
         res.send(difficulties);
     });
 });
 
 app.get('/question/types', function (req, res) {
-    questionDB.getTypes().then(data => {
+    questionService.getTypes().then(data => {
         var types = typeSerializer.serialize(data);
         res.send(types);
     });
@@ -119,14 +119,6 @@ app.get('/question/types', function (req, res) {
 app.get('/random/questions', function (req, res) {
     res.send("a Random set of question will be found here ....");
 });
-
-app.get('/question/amount', function (req, res) {
-    questionDB.getAmountQuestions().then(data => {
-        res.send(data);
-    });
-});
-
-
 
 
 app.use(errorHandler);
