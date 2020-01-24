@@ -4,7 +4,7 @@ import { OpenTDBService } from "./services/opentdb";
 export class QuestionService {
 
     constructor() {
-        db = new OpenTDBService();
+        db = new QuestionDB();
     }
 
     async getQuestions(params) {

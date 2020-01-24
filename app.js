@@ -1,10 +1,10 @@
 import { app, uuid, errorHandler } from "mu";
 import { Serializer } from "jsonapi-serializer";
 import { OpenTDBService } from "./services/opentdb";
-import { QuestionDB } from "./database/question";
+import { QuestionStore } from "./database/question";
 
 const openTDBService = new OpenTDBService();
-const questionDB = new QuestionDB;
+const questionDB = new QuestionStore;
 
 const typeSerializer = new Serializer('type', {
     attributes: ["name"]
@@ -114,5 +114,19 @@ app.get('/question/types', function (req, res) {
         res.send(types);
     });
 });
+
+// TODO
+app.get('/random/questions', function (req, res) {
+    res.send("a Random set of question will be found here ....");
+});
+
+app.get('/question/amount', function (req, res) {
+    questionDB.getAmountQuestions().then(data => {
+        res.send(data);
+    });
+});
+
+
+
 
 app.use(errorHandler);

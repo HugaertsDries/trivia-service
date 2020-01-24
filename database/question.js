@@ -7,7 +7,7 @@ const PREFIX_PRE_CORE = "http://qmino/vocabularies/core/";
 
 const NAMESPACE = "7d96e81d-bfad-4e08-b820-1d5ff04b1972";
 
-export class QuestionDB {
+export class QuestionStore {
 
     // DONE
     async addQuestion(question) {
@@ -192,6 +192,22 @@ export class QuestionDB {
             }
         });
         return types;
+    }
+
+    async getAmountQuestions() {
+        let q = `
+        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX ve: <${PREFIX_PRE_EXT}>
+        
+        SELECT COUNT(?uri) AS ?count
+        WHERE {
+            GRAPH <http://mu.semte.ch/application> {
+                ?uri rdf:type ve:Trivia 
+            }
+        }
+        `
+        let res = await query(q);
+        return res.results.bindings[0].count;
     }
 
     // TODO move this to dedicated transformation.js
