@@ -1,4 +1,11 @@
 {
+  "name": "trivia-micro-service",
+  "version": "1.0.0",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/HugaertsDries/trivia-service.git"
+  },
   "dependencies": {
     "jsonapi-serializer": "^3.6.6",
     "node-fetch": "^2.6.0",
