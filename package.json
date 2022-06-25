@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "jsonapi-serializer": "^3.6.6",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.7",
     "uuid": "^3.4.0"
   }
 }
